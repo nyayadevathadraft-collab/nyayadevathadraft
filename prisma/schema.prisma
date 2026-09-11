@@ -1,0 +1,266 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector", schema: "extensions")]
+}
+
+model Tenant {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  plan             String   @default("free")
+  stripeCustomerId String?  @map("stripe_customer_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  users      User[]
+  matters    Matter[]
+  documents  Document[]
+  facts      Fact[]
+  issues     LegalIssue[]
+  drafts     Draft[]
+  auditEvents AuditEvent[]
+
+  @@map("tenants")
+}
+
+model User {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  supabaseId String   @unique @map("supabase_id")
+  email      String   @unique
+  name       String?
+  role       String   @default("advocate")
+  locale     String   @default("en")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  matters     Matter[]
+  drafts      Draft[]
+  auditEvents AuditEvent[]
+
+  @@map("users")
+}
+
+model Matter {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  createdById    String   @map("created_by") @db.Uuid
+  title          String
+  clientName     String   @map("client_name")
+  jurisdiction   String   @default("india")
+  court          String
+  state          String
+  district       String
+  caseType       String   @map("case_type")
+  side           String
+  documentType   String   @map("document_type")
+  status         String   @default("created")
+  pipelineStage  Int      @default(0) @map("pipeline_stage")
+  pipelineError  String?  @map("pipeline_error")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  createdBy    User         @relation(fields: [createdById], references: [id])
+  documents    Document[]
+  facts        Fact[]
+  issues       LegalIssue[]
+  authorities  MatterAuthority[]
+  statutes     MatterStatute[]
+  drafts       Draft[]
+  auditEvents  AuditEvent[]
+
+  @@map("matters")
+}
+
+model Document {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId           String   @map("matter_id") @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  filename           String
+  storageKey         String   @map("storage_key")
+  mimeType           String   @map("mime_type")
+  pageCount          Int?     @map("page_count")
+  sizeBytes          Int?     @map("size_bytes")
+  ocrText            String?  @map("ocr_text")
+  geminiFileUri      String?  @map("gemini_file_uri")
+  extractedEntities  Json?    @map("extracted_entities")
+  contentHash        String?  @map("content_hash")
+  accessLevel        String   @default("matter") @map("access_level")
+  uploadedAt         DateTime @default(now()) @map("uploaded_at")
+
+  matter  Matter  @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  facts   Fact[]
+
+  @@map("documents")
+}
+
+model Fact {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId     String   @map("matter_id") @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  sourceDocId  String?  @map("source_doc_id") @db.Uuid
+  text         String
+  category     String
+  sourcePage   Int?     @map("source_page")
+  confidence   Float    @default(1.0)
+  status       String   @default("confirmed")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  matter    Matter    @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  sourceDoc Document? @relation(fields: [sourceDocId], references: [id])
+
+  @@map("facts")
+}
+
+model LegalIssue {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId         String   @map("matter_id") @db.Uuid
+  tenantId         String   @map("tenant_id") @db.Uuid
+  description      String
+  proceduralStage  String?  @map("procedural_stage")
+  transitionFlag   Boolean  @default(false) @map("transition_flag")
+  transitionNote   String?  @map("transition_note")
+  relatedFactIds   String[] @map("related_fact_ids") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  matter  Matter  @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+
+  @@map("legal_issues")
+}
+
+model StatuteRef {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actName           String   @map("act_name")
+  section           String
+  subsection        String?
+  currentText       String   @map("current_text")
+  commencementDate  DateTime? @map("commencement_date")
+  amendmentHistory  Json?    @map("amendment_history")
+  sourceConnectorId String   @map("source_connector_id")
+  sourceUrl         String   @map("source_url")
+  retrievedAt       DateTime @map("retrieved_at")
+  isOfficial        Boolean  @default(true) @map("is_official")
+
+  matterStatutes MatterStatute[]
+  citations      Citation[]
+
+  @@unique([actName, section, subsection])
+  @@map("statute_refs")
+}
+
+model MatterStatute {
+  matterId    String @map("matter_id") @db.Uuid
+  statuteRefId String @map("statute_ref_id") @db.Uuid
+
+  matter      Matter     @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  statuteRef  StatuteRef @relation(fields: [statuteRefId], references: [id])
+
+  @@id([matterId, statuteRefId])
+  @@map("matter_statutes")
+}
+
+model Authority {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  caseTitle         String   @map("case_title")
+  citation          String?
+  court             String
+  bench             String?
+  judgmentDate      DateTime? @map("judgment_date")
+  holding           String
+  relevantParas     Json?    @map("relevant_paras")
+  treatment         String   @default("persuasive")
+  sourceConnectorId String   @map("source_connector_id")
+  sourceUrl         String   @map("source_url")
+  verified          Boolean  @default(false)
+  retrievedAt       DateTime @map("retrieved_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  matterAuthorities MatterAuthority[]
+  citations         Citation[]
+
+  @@map("authorities")
+}
+
+model MatterAuthority {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId     String   @map("matter_id") @db.Uuid
+  authorityId  String   @map("authority_id") @db.Uuid
+  similarityScore Float? @map("similarity_score")
+  relevanceNote String? @map("relevance_note")
+  selection    String   @default("pending")
+  selectedById String?  @map("selected_by") @db.Uuid
+  selectedAt   DateTime? @map("selected_at")
+
+  matter    Matter    @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  authority Authority @relation(fields: [authorityId], references: [id])
+
+  @@unique([matterId, authorityId])
+  @@map("matter_authorities")
+}
+
+model Draft {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId     String   @map("matter_id") @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  createdById  String   @map("created_by") @db.Uuid
+  documentType String   @map("document_type")
+  version      Int      @default(1)
+  content      Json
+  contentText  String?  @map("content_text")
+  status       String   @default("generating")
+  reviewFlags  Json?    @map("review_flags")
+  draftingNotes String? @map("drafting_notes")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  matter     Matter     @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  createdBy  User       @relation(fields: [createdById], references: [id])
+  citations  Citation[]
+
+  @@map("drafts")
+}
+
+model Citation {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  draftId           String   @map("draft_id") @db.Uuid
+  authorityId       String?  @map("authority_id") @db.Uuid
+  statuteRefId      String?  @map("statute_ref_id") @db.Uuid
+  pinpoint          String?
+  citedProposition  String   @map("cited_proposition")
+  verificationState String   @default("unverified") @map("verification_state")
+  usedInPara        String?  @map("used_in_para")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  draft       Draft       @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  authority   Authority?  @relation(fields: [authorityId], references: [id])
+  statuteRef  StatuteRef? @relation(fields: [statuteRefId], references: [id])
+
+  @@map("citations")
+}
+
+model AuditEvent {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  matterId          String?  @map("matter_id") @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  actorId           String?  @map("actor_id") @db.Uuid
+  action            String
+  payload           Json?
+  sourceRetrievedAt DateTime? @map("source_retrieved_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  matter  Matter? @relation(fields: [matterId], references: [id])
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  @@map("audit_events")
+}

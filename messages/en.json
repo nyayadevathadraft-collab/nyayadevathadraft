@@ -1,0 +1,80 @@
+{
+  "app": {
+    "name": "NyayaDraft AI",
+    "tagline": "AI-powered legal drafting for Indian advocates",
+    "disclaimer": "AI-generated draft. Verify facts, law, limitation, jurisdiction, court rules and citations with a qualified Indian advocate before filing."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "newMatter": "New Matter",
+    "admin": "Admin",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "title": "Matters",
+    "empty": "No matters yet. Create your first matter to get started.",
+    "newMatter": "New Matter"
+  },
+  "matter": {
+    "status": {
+      "created": "Created",
+      "uploading": "Uploading",
+      "processing": "Processing",
+      "awaiting_selection": "Select Authorities",
+      "drafting": "Drafting",
+      "review": "Ready for Review",
+      "exported": "Exported"
+    },
+    "pipeline": {
+      "stage0": "Waiting",
+      "stage1": "OCR & Extraction",
+      "stage2": "Fact Analysis",
+      "stage3": "Issue Identification",
+      "stage4": "Statute Retrieval",
+      "stage5": "Case-law Research",
+      "stage6": "Authority Selection",
+      "stage7": "Draft Generation",
+      "stage8": "Validation Complete"
+    }
+  },
+  "upload": {
+    "title": "Upload Case Documents",
+    "subtitle": "Upload FIR, charge sheets, prior orders, notices, contracts, or any case documents.",
+    "dropzone": "Drag and drop files here, or click to browse",
+    "allowed": "PDF, DOCX, JPG, PNG, TIFF up to 50 MB each",
+    "startPipeline": "Start AI Analysis",
+    "uploading": "Uploading..."
+  },
+  "authorities": {
+    "title": "Suggested Authorities",
+    "subtitle": "Review and select which authorities to include in your draft.",
+    "include": "Include",
+    "exclude": "Exclude",
+    "researchOnly": "Research Only",
+    "proceed": "Generate Draft",
+    "binding": "Binding",
+    "persuasive": "Persuasive",
+    "overruled": "Overruled — Caution",
+    "analogous": "Analogous"
+  },
+  "draft": {
+    "title": "Drafting Workspace",
+    "sourcePanelTitle": "Source Evidence",
+    "draftingNotes": "Drafting Notes for Counsel",
+    "save": "Save",
+    "export": "Export",
+    "exportDocx": "Download DOCX",
+    "exportPdf": "Download PDF"
+  },
+  "validation": {
+    "title": "Pre-Filing Review",
+    "error": "Errors must be resolved before export",
+    "warning": "Warnings — review before filing",
+    "info": "Information"
+  },
+  "errors": {
+    "unauthorized": "You are not authorized to view this page.",
+    "notFound": "The requested resource was not found.",
+    "generic": "Something went wrong. Please try again."
+  }
+}
