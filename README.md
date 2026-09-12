@@ -139,44 +139,11 @@ Free limits: Flash 1,500 req/day · Pro 50 req/day · Embeddings free
 
 ---
 
-## Deploying to Vercel (Free Tier)
+## Deploying to Vercel
 
-### Step 1: Push your code to GitHub
-
-```bash
-git init
-git add .
-git commit -m "feat: NyayaDraft AI initial implementation"
-git remote add origin https://github.com/your-username/nyayadraft-ai.git
-git push -u origin main
-```
-
-### Step 2: Import to Vercel
-
-1. [vercel.com](https://vercel.com) → **Add New Project** → Import from GitHub
-2. Select your repository
-3. Framework preset: **Next.js** (auto-detected)
-4. **Environment Variables** — add every key from `.env.example` with real values
-5. Set `NEXT_PUBLIC_APP_URL=https://your-app.vercel.app`
-6. Click **Deploy**
-
-### Step 3: Wire up Inngest
-
-1. In [app.inngest.com](https://app.inngest.com) → **Apps** → **Sync new app**
-2. App URL: `https://your-app.vercel.app/api/inngest`
-3. Inngest will auto-discover and sync your pipeline functions
-
-### Step 4: Run database migrations
-
-```bash
-DIRECT_URL=<your-supabase-direct-url> npx prisma migrate deploy
-```
-
-Or use `npm run db:push` if you haven't versioned migrations yet.
-
-### Step 5: Apply RLS policies
-
-In Supabase → **SQL Editor** → paste and run `prisma/sql/rls.sql`
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full, ordered runbook — Supabase project setup,
+Vercel env vars, Inngest wiring, RLS/pgvector/Realtime setup, PDF-export function limits, and a
+post-deploy smoke test checklist.
 
 ---
 
