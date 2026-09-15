@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MatterNav } from "@/components/matters/matter-nav";
+import { FactTimeline, type FactStatus } from "@/components/facts/fact-timeline";
 import { cn } from "@/lib/utils";
 import { CheckCircle, AlertTriangle, HelpCircle, User } from "lucide-react";
 
@@ -34,6 +35,8 @@ export default async function FactsPage({ params }: { params: Promise<{ id: stri
     user_provided: facts.filter((f) => f.status === "user_provided"),
   };
 
+  const chronologyFacts = facts.filter((f) => f.category === "chronology");
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -44,6 +47,24 @@ export default async function FactsPage({ params }: { params: Promise<{ id: stri
           <p className="text-sm text-gray-500 mb-6">
             {facts.length} facts extracted. Review assumptions and fill in gaps before generating the draft.
           </p>
+
+          {chronologyFacts.length > 0 && (
+            <div className="mb-8 border rounded-lg px-4 pt-4 pb-2 bg-white">
+              <h2 className="text-sm font-semibold text-gray-700 mb-1">Chronology</h2>
+              <p className="text-xs text-gray-400 mb-2">
+                Ordered by extraction sequence — hover a point for details.
+              </p>
+              <FactTimeline
+                facts={chronologyFacts.map((f) => ({
+                  id: f.id,
+                  text: f.text,
+                  status: f.status as FactStatus,
+                  confidence: f.confidence,
+                  sourcePage: f.sourcePage,
+                }))}
+              />
+            </div>
+          )}
 
           {facts.length === 0 ? (
             <div className="text-sm text-gray-500 py-8">No facts extracted yet. Run AI analysis first.</div>
